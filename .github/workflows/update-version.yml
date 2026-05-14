@@ -84,6 +84,23 @@ jobs:
           sed -i -E "s/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/" Dockerfile.cli
           echo "Updated Dockerfile.cli with version ${{ steps.final-version.outputs.VERSION }}"
 
+      - name: Update README.md and README_zh.md with new version
+        if: steps.final-version.outputs.VERSION != ''
+        run: |
+          VERSION="${{ steps.final-version.outputs.VERSION }}"
+          for file in README.md README_zh.md; do
+            # English: version info, Included Software Information/Release/zip path (already covered above for README.md)
+            # Chinese: main "版本 ..." in introduction
+            sed -i -E "s/(版本[ 　]*)([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(，发布于)/\1${VERSION}\3/g" "$file"
+            # Chinese: section "内含软件信息 (版本: ...)"
+            sed -i -E "s/(内含软件信息 \(版本: )[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1${VERSION}/g" "$file"
+            # Chinese: Release 版本 table row
+            sed -i -E "s/(Release 版本[ \t]+)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1${VERSION}/g" "$file"
+            # Chinese: zip path
+            sed -i -E "s|(二进制文件位置[ \t]+包含在仓库中: \./bin/univpn-linux-64-)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(.zip)|\1${VERSION}\2|g" "$file"
+          done
+          echo "Updated README.md and README_zh.md with version $VERSION"
+
       - name: Create Pull Request
         if: steps.final-version.outputs.VERSION != ''
         uses: peter-evans/create-pull-request@v4
