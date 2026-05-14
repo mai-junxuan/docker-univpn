@@ -40,12 +40,12 @@ jobs:
       - name: Extract new version
         id: get-version
         run: |
-          NEW_FILE=$(echo "${{ steps.changed-files.outputs.added_files }}" | grep 'bin/univpn-linux-64-.*\.zip' | head -n 1)
+          NEW_FILE=$(echo "${{ steps.changed-files.outputs.added_files }}" | grep 'bin/univpn-linux-(64|amd64)-.*\.zip' | head -n 1)
           if [ -z "$NEW_FILE" ]; then
             echo "No new UniVPN zip file detected in bin/ directory. Using default version."
             echo "VERSION=" >> $GITHUB_OUTPUT
           else
-            VERSION=$(echo "$NEW_FILE" | sed -E 's/bin\/univpn-linux-64-(.*)\\.zip/\1/' | sed -E 's/\.0*([0-9]+)$/\.\1/')
+            VERSION=$(echo "$NEW_FILE" | sed -E 's/bin\/univpn-linux-(64|amd64)-(.*)\\.zip/\1/' | sed -E 's/\.0*([0-9]+)$/\.\1/')
             echo "Detected new version: $VERSION"
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           fi
