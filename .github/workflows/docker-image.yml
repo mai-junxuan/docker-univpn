@@ -40,14 +40,33 @@ jobs:
       - name: Extract new version
         id: get-version
         run: |
-          NEW_FILE=$(echo "${{ steps.changed-files.outputs.added_files }}" | grep 'bin/univpn-linux-(64|amd64)-.*\.zip' | head -n 1)
-          if [ -z "$NEW_FILE" ]; then
-            echo "No new UniVPN zip file detected in bin/ directory. Using default version."
+          # Get the latest bin file version
+          BIN_FILE=$(ls -1 bin/univpn-linux-*-*.zip 2>/dev/null | sort -V | tail -n 1)
+          
+          if [ -z "$BIN_FILE" ]; then
+            echo "No UniVPN zip file found in bin/ directory."
             echo "VERSION=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Extract version from bin filename (e.g., univpn-linux-amd64-1.2.3.zip -> 1.2.3)
+          BIN_VERSION=$(echo "$BIN_FILE" | sed -E 's/bin\/univpn-linux-(64|amd64)-(.*)\\.zip/\2/')
+          echo "Bin version: $BIN_VERSION"
+          
+          # Get the latest release tag from GitHub
+          LATEST_RELEASE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest \
+            | grep -oP '"tag_name": "\K[^"]*' | head -1 | sed 's/^v//')
+          
+          echo "Latest release: $LATEST_RELEASE"
+          
+          # Compare versions and set VERSION output if bin version is newer
+          if [ -z "$LATEST_RELEASE" ] || [ "$(printf '%s\n' "$LATEST_RELEASE" "$BIN_VERSION" | sort -V | tail -n1)" = "$BIN_VERSION" ] && [ "$LATEST_RELEASE" != "$BIN_VERSION" ]; then
+            echo "New version detected: $BIN_VERSION"
+            echo "VERSION=$BIN_VERSION" >> $GITHUB_OUTPUT
           else
-            VERSION=$(echo "$NEW_FILE" | sed -E 's/bin\/univpn-linux-(64|amd64)-(.*)\\.zip/\1/' | sed -E 's/\.0*([0-9]+)$/\.\1/')
-            echo "Detected new version: $VERSION"
-            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "No new version. Bin version ($BIN_VERSION) is not newer than latest release ($LATEST_RELEASE)."
+            echo "VERSION=" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up QEMU
