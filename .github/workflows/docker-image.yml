@@ -50,7 +50,7 @@ jobs:
           fi
           
           # Extract version from bin filename (e.g., univpn-linux-amd64-1.2.3.zip -> 1.2.3)
-          BIN_VERSION=$(echo "$BIN_FILE" | sed -E 's/bin\/univpn-linux-(64|amd64)-(.*)\\.zip/\2/')
+          BIN_VERSION=$(basename "$BIN_FILE" .zip | sed -E 's/univpn-linux-(64|amd64)-//')
           echo "Bin version: $BIN_VERSION"
           
           # Get the latest release tag from GitHub
@@ -158,7 +158,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          tag_name: v${{ steps.get-new-version.outputs.NEW_VERSION }}
-          release_name: Release v${{ steps.get-new-version.outputs.NEW_VERSION }}
+          tag_name: ${{ steps.get-new-version.outputs.NEW_VERSION }}
+          release_name: Release ${{ steps.get-new-version.outputs.NEW_VERSION }}
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: true
