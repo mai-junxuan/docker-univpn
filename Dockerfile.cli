@@ -5,7 +5,6 @@ FROM ubuntu:22.04
 ARG CLIENT_VERSION=10781.19.0.1214
 ARG ZIP_FILE_REL_PATH=bin/univpn-linux-64-${CLIENT_VERSION}.zip
 ARG INSTALLER_SOURCE_DIR=/home/UniVPN
-ARG INSTALLER_RUN_FILE=univpn-linux-64-${CLIENT_VERSION}.run
 ARG ACTUAL_INSTALL_DIR=/usr/local/UniVPN
 ARG INSTALL_LOG_DIR=${ACTUAL_INSTALL_DIR}/log
 ARG INSTALL_LOG_FILE=${INSTALL_LOG_DIR}/install.log
@@ -89,26 +88,31 @@ RUN unzip installer.zip && \
     echo "Listing extracted files in ${INSTALLER_SOURCE_DIR}:" && \
     ls -l
 
-# Verify the expected installer file exists in the current dir and make it executable
-RUN if [ ! -f ${INSTALLER_RUN_FILE} ]; then \
-        echo "Error: Expected installer ${INSTALLER_RUN_FILE} not found in ${INSTALLER_SOURCE_DIR}."; \
+# Find and verify the installer file (supports both univpn-linux-64 and univpn-linux-amd64 patterns)
+RUN INSTALLER_RUN_FILE=$(ls univpn-linux-*-*.run 2>/dev/null | head -1) && \
+    if [ -z "$INSTALLER_RUN_FILE" ]; then \
+        echo "Error: No installer file matching pattern 'univpn-linux-*-*.run' found in ${INSTALLER_SOURCE_DIR}."; \
         exit 1; \
     fi && \
-    chmod +x ${INSTALLER_RUN_FILE} && \
-    echo "Made ${INSTALLER_RUN_FILE} executable in ${INSTALLER_SOURCE_DIR}."
+    chmod +x "$INSTALLER_RUN_FILE" && \
+    echo "Found and made executable: $INSTALLER_RUN_FILE" && \
+    echo "INSTALLER_RUN_FILE=$INSTALLER_RUN_FILE" > /tmp/installer_env.sh
 
 # Ensure the target log directory exists BEFORE running the installer
 RUN mkdir -p ${INSTALL_LOG_DIR}
 
 # Run the installer FROM the current directory, redirecting output to the log file
-RUN echo "Running installer as root from $(pwd)... Output logged to ${INSTALL_LOG_FILE}" && \
-    ./${INSTALLER_RUN_FILE} > ${INSTALL_LOG_FILE} 2>&1 \
+RUN . /tmp/installer_env.sh && \
+    echo "Running installer as root from $(pwd)... Output logged to ${INSTALL_LOG_FILE}" && \
+    ./$INSTALLER_RUN_FILE > ${INSTALL_LOG_FILE} 2>&1 \
     && \
     echo "Installation finished. Check ${INSTALL_LOG_FILE} for details."
 
 # Clean up the installer file after successful execution
-RUN rm ${INSTALLER_RUN_FILE} && \
-    echo "Removed installer file ${INSTALLER_RUN_FILE}."
+RUN . /tmp/installer_env.sh && \
+    rm $INSTALLER_RUN_FILE && \
+    rm /tmp/installer_env.sh && \
+    echo "Removed installer file and environment script."
 
 # --- Supervisor Setup ---
 # Create supervisor log directory
