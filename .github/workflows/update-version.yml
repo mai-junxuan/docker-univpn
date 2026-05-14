@@ -79,11 +79,9 @@ jobs:
         run: |
           sed -i -E "s/ARG CLIENT_VERSION=.*/ARG CLIENT_VERSION=${{ steps.final-version.outputs.VERSION }}/" Dockerfile
           sed -i -E "s/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/" Dockerfile
-          sed -i -E "s/ARG INSTALLER_RUN_FILE=univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.run/ARG INSTALLER_RUN_FILE=univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.run/" Dockerfile
           echo "Updated Dockerfile with version ${{ steps.final-version.outputs.VERSION }}"
           sed -i -E "s/ARG CLIENT_VERSION=.*/ARG CLIENT_VERSION=${{ steps.final-version.outputs.VERSION }}/" Dockerfile.cli
           sed -i -E "s/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/ARG ZIP_FILE_REL_PATH=bin\\/univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.zip/" Dockerfile.cli
-          sed -i -E "s/ARG INSTALLER_RUN_FILE=univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.run/ARG INSTALLER_RUN_FILE=univpn-linux-64-\\$\\{CLIENT_VERSION\\}\\.run/" Dockerfile.cli
           echo "Updated Dockerfile.cli with version ${{ steps.final-version.outputs.VERSION }}"
 
       - name: Create Pull Request
