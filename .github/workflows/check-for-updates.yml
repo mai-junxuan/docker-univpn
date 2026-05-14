@@ -64,6 +64,8 @@ jobs:
           if [ "$IS_NEWER" = true ]; then
             echo "New version ${{ steps.get-web-version.outputs.WEB_VERSION }} is available. Downloading..."
             mkdir -p bin
+            # Delete old UniVPN files
+            rm -f bin/univpn-linux-64-*.zip
             curl -L -o bin/univpn-linux-64-${{ steps.get-web-version.outputs.WEB_VERSION }}.zip ${{ steps.get-web-version.outputs.FULL_URL }}
             echo "Downloaded univpn-linux-64-${{ steps.get-web-version.outputs.WEB_VERSION }}.zip to bin/"
             echo "NEW_FILE_DOWNLOADED=true" >> $GITHUB_OUTPUT
