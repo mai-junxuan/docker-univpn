@@ -159,6 +159,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           tag_name: ${{ steps.get-new-version.outputs.NEW_VERSION }}
-          release_name: Release ${{ steps.get-new-version.outputs.NEW_VERSION }}
+          release_name: ${{ steps.get-new-version.outputs.NEW_VERSION }}
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: true
