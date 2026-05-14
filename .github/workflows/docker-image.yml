@@ -129,11 +129,24 @@ jobs:
         id: get-new-version
         run: echo "NEW_VERSION=${{ needs.build.outputs.new_version }}" >> $GITHUB_OUTPUT
 
+      - name: Get previous tag
+        id: previous-tag
+        run: |
+          # Get the most recent tag (excluding the current commit's tags)
+          PREV_TAG=$(git tag --sort=-version:refname | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            # If no tags exist, use the initial commit
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_OUTPUT
+
       - name: Generate Changelog
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v6
         with:
           token: ${{ secrets.GH_TOKEN }}
+          fromTag: ${{ steps.previous-tag.outputs.PREV_TAG }}
+          toTag: HEAD
           configuration: |
             {
               "categories": [
