@@ -131,7 +131,7 @@ jobs:
 
       - name: Generate Changelog
         id: changelog
-        uses: mikepenz/action-changelog@v4
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           token: ${{ secrets.GH_TOKEN }}
           configuration: |
