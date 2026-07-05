@@ -1,0 +1,26 @@
+services:
+  univpn-cli:
+    build:
+      context: .
+      dockerfile: arm64/Dockerfile
+    platform: linux/arm64/v8
+    image: local/univpn-arm64-cli:10781.19.0.1214
+    container_name: univpn-cli-arm64
+    restart: unless-stopped
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+    ports:
+      - "1081:1080"
+      - "8889:8888"
+    shm_size: "1g"
+    environment:
+      - VPN_USERNAME=${VPN_USERNAME}
+      - VPN_PASSWORD=${VPN_PASSWORD}
+      - VPN_GATEWAY_ADDRESS=${VPN_GATEWAY_ADDRESS}
+      - VPN_GATEWAY_PORT=${VPN_GATEWAY_PORT}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-10}
+      - RETRY_DELAY=${RETRY_DELAY:-5}
+      - DEBUG_MODE=${DEBUG_MODE:-false}

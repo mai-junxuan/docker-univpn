@@ -1,24 +1,42 @@
 #!/bin/bash
+set -u
 
 INTERFACE="cnem_vnic"
-DANTE_COMMAND="/usr/sbin/danted -f /etc/danted.conf"
-CHECK_INTERVAL=5 # Seconds between checks
-MAX_CHECKS=60    # Wait a maximum of 5 minutes (60 checks * 5 seconds)
+CHECK_INTERVAL=5
 
-echo "[Wrapper] Waiting for interface ${INTERFACE} to appear..."
+wait_for_interface() {
+  echo "[Wrapper] Waiting for interface ${INTERFACE} to appear..."
 
-COUNT=0
-# Loop until the interface exists or we time out
-while ! ip link show "${INTERFACE}" > /dev/null 2>&1; do
-  if [ ${COUNT} -ge ${MAX_CHECKS} ]; then
-    echo "[Wrapper] ERROR: Interface ${INTERFACE} did not appear after $((MAX_CHECKS * CHECK_INTERVAL)) seconds. Exiting." >&2
-    exit 1
+  while ! ip link show "${INTERFACE}" > /dev/null 2>&1; do
+    echo "[Wrapper] Interface ${INTERFACE} not found yet, waiting ${CHECK_INTERVAL}s..."
+    sleep "${CHECK_INTERVAL}"
+  done
+}
+
+stop_dante() {
+  local pid=$1
+  if kill -0 "${pid}" 2>/dev/null; then
+    echo "[Wrapper] Stopping Dante server because ${INTERFACE} is unavailable..."
+    kill "${pid}" 2>/dev/null || true
+    wait "${pid}" 2>/dev/null || true
   fi
-  echo "[Wrapper] Interface ${INTERFACE} not found yet, waiting ${CHECK_INTERVAL}s... (${COUNT}/${MAX_CHECKS})"
-  sleep ${CHECK_INTERVAL}
-  COUNT=$((COUNT + 1))
-done
+}
 
-echo "[Wrapper] Interface ${INTERFACE} found. Starting Dante server..."
-# Use exec to replace this script process with the danted process
-exec ${DANTE_COMMAND}
+while true; do
+  wait_for_interface
+
+  echo "[Wrapper] Interface ${INTERFACE} found. Starting Dante server..."
+  /usr/sbin/danted -f /etc/danted.conf &
+  DANTE_PID=$!
+
+  while kill -0 "${DANTE_PID}" 2>/dev/null; do
+    if ! ip link show "${INTERFACE}" > /dev/null 2>&1; then
+      stop_dante "${DANTE_PID}"
+      break
+    fi
+    sleep "${CHECK_INTERVAL}"
+  done
+
+  echo "[Wrapper] Dante server stopped. Restarting when ${INTERFACE} is available..."
+  sleep "${CHECK_INTERVAL}"
+done

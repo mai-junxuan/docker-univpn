@@ -1,3 +1,5 @@
 univpn_config/
 univpn_logs/
 .env
+.DS_Store
+.idea/

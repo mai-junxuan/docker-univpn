@@ -1,8 +1,9 @@
-version: "3.8" # Use a recent compose version
-
 services:
   univpn:
-    image: triatk/univpn:latest-cli
+    build:
+      context: .
+      dockerfile: amd64/Dockerfile
+    image: local/univpn-cli:10781.19.0.1214
     container_name: univpn
     restart: unless-stopped
 
@@ -26,12 +27,6 @@ services:
     devices:
       - "/dev/net/tun:/dev/net/tun"
 
-    # --- Set Specific MAC Address ---
-    # Reads the SPOOF_MAC variable from the .env file or host environment.
-    # Ensure the format is valid (e.g., 00:11:22:33:44:55)
-    # THIS ONLY WORKS IF network_mode IS NOT set to 'host'.
-    mac_address: ${SPOOF_MAC:-02:42:ac:11:00:01}
-
     ports:
       # Note: 'ports' mapping is ignored if network_mode: host is enabled above.
       - "1080:1080" # SOCKS5 Proxy Port
@@ -42,24 +37,10 @@ services:
       # VPN Credentials (REQUIRED)
       - VPN_USERNAME=${VPN_USERNAME}
       - VPN_PASSWORD=${VPN_PASSWORD}
-
-      # --- Enable Auto Reconnect ---
-      - AUTO_RECONNECT=${AUTO_RECONNECT:-false}
-
-      # --- What IP to ping to check internet? (e.g. 1.1.1.1 or your company internal server) ---
-      - RECONNECT_PING_TARGET=${RECONNECT_PING_TARGET:-1.1.1.1}
-
-      # --- How many seconds to wait before starting to ping (Time for you to type password) ---
-      - RECONNECT_GRACE_PERIOD=${RECONNECT_GRACE_PERIOD:-60}
+      - VPN_GATEWAY_ADDRESS=${VPN_GATEWAY_ADDRESS}
+      - VPN_GATEWAY_PORT=${VPN_GATEWAY_PORT}
 
       # You can add other ENV variables needed by the container/app here
       # Example (already set in Dockerfile, but could be overridden):
       # - TZ=Asia/Shanghai
-      # - VNC_RESOLUTION=1920x1080
       - DEBUG_MODE=true
-
-    # --- Optional: Volumes ---
-    # If you need to persist UniVPN configuration or logs outside the container:
-    volumes:
-      - ./univpn_config:/home/vpnuser/UniVPN
-    #   - ./univpn_logs:/usr/local/UniVPN/log
